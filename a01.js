@@ -1,10 +1,6 @@
 /*
-  Basic File I/O for displaying
-  Skeleton Author: Joshua A. Levine
-  Modified by: Amir Mohammad Esmaieeli Sikaroudi
-  Email: amesmaieeli@email.arizona.edu
+    Assignment 1: Rotate/Change Size of an Image
 */
-
 
 //access DOM elements we'll use
 var input = document.getElementById("load_image");
@@ -16,6 +12,8 @@ var width = 0;
 var height = 0;
 // The image data
 var ppm_img_data;
+var currentAngle = 0;
+var currentScale = 1;
 
 //Function to process upload
 var upload = function () {
@@ -31,20 +29,14 @@ var upload = function () {
             var file_data = fReader.result;
             parsePPM(file_data);
 
-            /*
-            * TODO: ADD CODE HERE TO DO 2D TRANSFORMATION and ANIMATION
-            * Modify any code if needed
-            * Hint: Write a rotation method, and call WebGL APIs to reuse the method for animation
-            */
-	    
-            // *** The code below is for the template to show you how to use matrices and update pixels on the canvas.
-            // *** Modify/remove the following code and implement animation
-
-	    // Create a new image data object to hold the new image
+	        // Create a new image data object to hold the new image
             var newImageData = ctx.createImageData(width, height);
-	    var transMatrix = GetTranslationMatrix(0, height);// Translate image
-	    var scaleMatrix = GetScalingMatrix(1, -1);// Flip image y axis
-	    var matrix = MultiplyMatrixMatrix(transMatrix, scaleMatrix);// Mix the translation and scale matrices
+            // var transMatrix = GetTranslationMatrix(0, height);// Translate image
+            // var scaleMatrix = GetScalingMatrix(1, -1);// Flip image y axis
+            // --------------- Me ---------------
+            let transformMatrix = rotate();
+
+            // var matrix = MultiplyMatrixMatrix(transMatrix, scaleMatrix);// Mix the translation and scale matrices
             
             // Loop through all the pixels in the image and set its color
             for (var i = 0; i < ppm_img_data.data.length; i += 4) {
@@ -54,7 +46,7 @@ var upload = function () {
                              Math.floor(i / 4) / width, 1];
         
                 // Get the location of the sample pixel
-                var samplePixel = MultiplyMatrixVector(matrix, pixel);
+                var samplePixel = MultiplyMatrixVector(transformMatrix, pixel);
 
                 // Floor pixel to integer
                 samplePixel[0] = Math.floor(samplePixel[0]);
@@ -67,10 +59,72 @@ var upload = function () {
             ctx.putImageData(newImageData, canvas.width/2 - width/2, canvas.height/2 - height/2);
 	    
 	    // Show matrix
-            showMatrix(matrix);
+            showMatrix(transformMatrix);
         }
     }
 }
+
+// function rotate() {
+//     currentAngle += 45;
+//     if (currentAngle >= 360) currentAngle = 0; // Reset after full rotation
+
+//     let radians = (currentAngle * Math.PI) / 180;
+//     let newWidth = Math.abs(width * Math.cos(radians)) + Math.abs(height * Math.sin(radians));
+//     let newHeight = Math.abs(width * Math.sin(radians)) + Math.abs(height * Math.cos(radians));
+
+//     // canvas.width = Math.ceil(newWidth);
+//     // canvas.height = Math.ceil(newHeight);
+
+//     let translationToOrigin = GetTranslationMatrix(-width / 2, -height / 2);
+//     let translationBack = GetTranslationMatrix(newWidth / 2, newHeight / 2);
+
+//     let transformMatrix = MultiplyMatrixMatrix(
+//         translationBack,
+//         MultiplyMatrixMatrix(rotationMatrix, translationToOrigin)
+//     );
+//     return transformMatrix
+// }
+
+function rotate() {
+    // Rotate 45 degrees
+    let rotationMatrix = GetRotationMatrix(currentAngle)
+    let radians = (currentAngle * Math.PI) / 180;
+    // let newWidth = Math.abs(width * Math.cos(radians)) + Math.abs(height * Math.sin(radians));
+    // let newHeight = Math.abs(width * Math.sin(radians)) + Math.abs(height * Math.cos(radians));
+    
+    // canvas.width = Math.ceil(newWidth);
+    // canvas.height = Math.ceil(newHeight);
+    
+    ctx.rotate(currentAngle * Math.PI / 180)
+    // Move center to origin
+    let translationToOrigin = GetTranslationMatrix(-width / 2, -height / 2);
+    let translationBack = GetTranslationMatrix(width / 2, height / 2);
+    let transformMatrix = MultiplyMatrixMatrix(translationBack, MultiplyMatrixMatrix(rotationMatrix, translationToOrigin));
+    
+    if (currentAngle <= 180) {
+        // width = width/currentScale
+        // height = height/currentScale
+        currentScale += 0.1
+    } else {
+        // width = width*currentScale
+        // height = height*currentScale
+        currentScale -= 0.1
+    }
+    currentAngle += 45
+    if (currentAngle == 360) {
+        currentAngle = 0
+        // currentScale = 1
+    }    
+    // return GetTranslationMatrix(1, 1)
+    return transformMatrix
+}
+
+input.addEventListener("change", function() {
+    setTimeout(() => {
+        upload();
+        setInterval(upload, 1000)
+    }, 1000)
+})
 
 // Show transformation matrix on HTML
 function showMatrix(matrix){
@@ -155,4 +209,4 @@ function parsePPM(file_data){
 }
 
 //Connect event listeners
-input.addEventListener("change", upload);
+// input.addEventListener("change", upload);
