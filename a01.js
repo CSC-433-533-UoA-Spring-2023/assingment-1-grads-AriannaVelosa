@@ -29,15 +29,17 @@ var upload = function () {
             var file_data = fReader.result;
             parsePPM(file_data);
 
+            
 	        // Create a new image data object to hold the new image
             var newImageData = ctx.createImageData(width, height);
-            // var transMatrix = GetTranslationMatrix(0, height);// Translate image
-            // var scaleMatrix = GetScalingMatrix(1, -1);// Flip image y axis
-            // --------------- Me ---------------
             let transformMatrix = rotate();
+            let diagonal = Math.ceil(Math.sqrt(width * width + height * height));
+            canvas.width = diagonal;
+            canvas.height = diagonal;
+            ctx.width = diagonal
+            ctx.height = diagonal
+            console.log("data", ppm_img_data.data.length)
 
-            // var matrix = MultiplyMatrixMatrix(transMatrix, scaleMatrix);// Mix the translation and scale matrices
-            
             // Loop through all the pixels in the image and set its color
             for (var i = 0; i < ppm_img_data.data.length; i += 4) {
 
@@ -51,71 +53,42 @@ var upload = function () {
                 // Floor pixel to integer
                 samplePixel[0] = Math.floor(samplePixel[0]);
                 samplePixel[1] = Math.floor(samplePixel[1]);
-
-                setPixelColor(newImageData, samplePixel, i);
+                if (!(samplePixel[0] < 0 || samplePixel[0] > width || samplePixel[0] > height ||
+                    samplePixel[1] < 0 || samplePixel[1] > width || samplePixel[1] > height)
+                ) {
+                    setPixelColor(newImageData, samplePixel, i);
+                }
             }
-
+            
             // Draw the new image
             ctx.putImageData(newImageData, canvas.width/2 - width/2, canvas.height/2 - height/2);
-	    
+            ctx.restore()
 	    // Show matrix
             showMatrix(transformMatrix);
         }
     }
 }
 
-// function rotate() {
-//     currentAngle += 45;
-//     if (currentAngle >= 360) currentAngle = 0; // Reset after full rotation
-
-//     let radians = (currentAngle * Math.PI) / 180;
-//     let newWidth = Math.abs(width * Math.cos(radians)) + Math.abs(height * Math.sin(radians));
-//     let newHeight = Math.abs(width * Math.sin(radians)) + Math.abs(height * Math.cos(radians));
-
-//     // canvas.width = Math.ceil(newWidth);
-//     // canvas.height = Math.ceil(newHeight);
-
-//     let translationToOrigin = GetTranslationMatrix(-width / 2, -height / 2);
-//     let translationBack = GetTranslationMatrix(newWidth / 2, newHeight / 2);
-
-//     let transformMatrix = MultiplyMatrixMatrix(
-//         translationBack,
-//         MultiplyMatrixMatrix(rotationMatrix, translationToOrigin)
-//     );
-//     return transformMatrix
-// }
 
 function rotate() {
     // Rotate 45 degrees
     let rotationMatrix = GetRotationMatrix(currentAngle)
-    let radians = (currentAngle * Math.PI) / 180;
-    // let newWidth = Math.abs(width * Math.cos(radians)) + Math.abs(height * Math.sin(radians));
-    // let newHeight = Math.abs(width * Math.sin(radians)) + Math.abs(height * Math.cos(radians));
     
-    // canvas.width = Math.ceil(newWidth);
-    // canvas.height = Math.ceil(newHeight);
-    
-    ctx.rotate(currentAngle * Math.PI / 180)
     // Move center to origin
     let translationToOrigin = GetTranslationMatrix(-width / 2, -height / 2);
     let translationBack = GetTranslationMatrix(width / 2, height / 2);
-    let transformMatrix = MultiplyMatrixMatrix(translationBack, MultiplyMatrixMatrix(rotationMatrix, translationToOrigin));
+    let scaleMatrix = GetScalingMatrix(currentScale, currentScale)
+    let transformMatrix = MultiplyMatrixMatrix(translationBack, MultiplyMatrixMatrix(rotationMatrix, MultiplyMatrixMatrix(scaleMatrix, translationToOrigin)));
     
-    if (currentAngle <= 180) {
-        // width = width/currentScale
-        // height = height/currentScale
-        currentScale += 0.1
+    if (currentAngle < 180) {
+        currentScale += 0.2
     } else {
-        // width = width*currentScale
-        // height = height*currentScale
-        currentScale -= 0.1
+        currentScale -= 0.2
     }
     currentAngle += 45
     if (currentAngle == 360) {
         currentAngle = 0
-        // currentScale = 1
     }    
-    // return GetTranslationMatrix(1, 1)
     return transformMatrix
 }
 
