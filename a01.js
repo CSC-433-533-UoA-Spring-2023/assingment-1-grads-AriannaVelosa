@@ -10,6 +10,11 @@ var ctx = canvas.getContext('2d');
 // The width and height of the image
 var width = 0;
 var height = 0;
+var extendedWidth = 0;
+var extendedHeight = 0;
+var height = 0;
+var first = 0;
+
 // The image data
 var ppm_img_data;
 var currentAngle = 0;
@@ -30,22 +35,26 @@ var upload = function () {
             parsePPM(file_data);
 
             
-	        // Create a new image data object to hold the new image
-            var newImageData = ctx.createImageData(width, height);
-            let transformMatrix = rotate();
+            // Create a new image data object to hold the new image
             let diagonal = Math.ceil(Math.sqrt(width * width + height * height));
+            
+            extendedWidth=diagonal;
+            extendedHeight=diagonal;
+            var newImageData = ctx.createImageData(extendedWidth, extendedHeight);
+            let transformMatrix = rotate();
             canvas.width = diagonal;
             canvas.height = diagonal;
             ctx.width = diagonal
             ctx.height = diagonal
-            console.log("data", ppm_img_data.data.length)
 
-            // Loop through all the pixels in the image and set its color
-            for (var i = 0; i < ppm_img_data.data.length; i += 4) {
+	        // Loop through all the pixels in the image and set its color
+            for (var i = 0; i < newImageData.data.length; i += 4) {
 
                 // Get the pixel location in x and y with (0,0) being the top left of the image
-                var pixel = [Math.floor(i / 4) % width, 
-                             Math.floor(i / 4) / width, 1];
+                var pixel = [Math.floor(i / 4) % extendedWidth, 
+                             Math.floor(i / 4) / extendedHeight, 1];
+		        pixel[0]=pixel[0]-(extendedWidth-width)/2;
+	            pixel[1]=pixel[1]-(extendedHeight-height)/2;
         
                 // Get the location of the sample pixel
                 var samplePixel = MultiplyMatrixVector(transformMatrix, pixel);
@@ -53,23 +62,26 @@ var upload = function () {
                 // Floor pixel to integer
                 samplePixel[0] = Math.floor(samplePixel[0]);
                 samplePixel[1] = Math.floor(samplePixel[1]);
-                if (!(samplePixel[0] < 0 || samplePixel[0] > width || samplePixel[0] > height ||
-                    samplePixel[1] < 0 || samplePixel[1] > width || samplePixel[1] > height)
-                ) {
+                if (!(samplePixel[0] < 0 || samplePixel[0] > width || samplePixel[1] < 0 || samplePixel[1] > height)) {
                     setPixelColor(newImageData, samplePixel, i);
                 }
             }
             
             // Draw the new image
-            ctx.putImageData(newImageData, canvas.width/2 - width/2, canvas.height/2 - height/2);
+            ctx.putImageData(newImageData, 0,0);
             ctx.restore()
-	    // Show matrix
+	        // Show matrix
             showMatrix(transformMatrix);
         }
+
     }
 }
 
-
+/*
+    This function is what builds the transformation matrix. I translate the image to
+    the origin based on the width and height, rotate it, shrink it, and then translate
+    it back. I use 3 matrices to build the final matrix.
+*/
 function rotate() {
     // Rotate 45 degrees
     let rotationMatrix = GetRotationMatrix(currentAngle)
@@ -80,23 +92,26 @@ function rotate() {
     let scaleMatrix = GetScalingMatrix(currentScale, currentScale)
     let transformMatrix = MultiplyMatrixMatrix(translationBack, MultiplyMatrixMatrix(rotationMatrix, MultiplyMatrixMatrix(scaleMatrix, translationToOrigin)));
     
+    // Adjust the current rotation and scale
+    // When we first start, we shrink, then we return to the normal size
     if (currentAngle < 180) {
-        currentScale += 0.2
+        currentScale += 0.05
     } else {
-        currentScale -= 0.2
+        currentScale -= 0.05
     }
-    currentAngle += 45
+    currentAngle += 5
     if (currentAngle == 360) {
         currentAngle = 0
     }    
     return transformMatrix
 }
 
+// This is my listener to rotate the image often
 input.addEventListener("change", function() {
     setTimeout(() => {
         upload();
-        setInterval(upload, 1000)
-    }, 1000)
+        setInterval(upload, 125)
+    }, 125)
 })
 
 // Show transformation matrix on HTML
@@ -152,6 +167,7 @@ function parsePPM(file_data){
     console.log("Width: " + width);
     console.log("Height: " + height);
     console.log("Max Value: " + max_v);
+
     /*
      * Extract Pixel Data
      */
@@ -177,9 +193,5 @@ function parsePPM(file_data){
         image_data.data[i + 3] = 255; // A channel is deafult to 255
     }
     ctx.putImageData(image_data, canvas.width/2 - width/2, canvas.height/2 - height/2);
-    //ppm_img_data = ctx.getImageData(0, 0, canvas.width, canvas.height);   // This gives more than just the image I want??? I think it grabs white space from top left?
     ppm_img_data = image_data;
 }
-
-//Connect event listeners
-// input.addEventListener("change", upload);
