@@ -1,5 +1,5 @@
 /*
-    Assignment 1: Rotate/Change Size of an Image
+    Assignment 1: Rotate/Change Size of a PPM Image
 */
 
 //access DOM elements we'll use
@@ -38,6 +38,7 @@ var upload = function () {
             // Create a new image data object to hold the new image
             let diagonal = Math.ceil(Math.sqrt(width * width + height * height));
             
+            // Adjust the sizes appropriately
             extendedWidth=diagonal;
             extendedHeight=diagonal;
             var newImageData = ctx.createImageData(extendedWidth, extendedHeight);
@@ -86,7 +87,7 @@ function rotate() {
     // Rotate 45 degrees
     let rotationMatrix = GetRotationMatrix(currentAngle)
     
-    // Move center to origin
+    // Move center to origin, rotate, scale, move back
     let translationToOrigin = GetTranslationMatrix(-width / 2, -height / 2);
     let translationBack = GetTranslationMatrix(width / 2, height / 2);
     let scaleMatrix = GetScalingMatrix(currentScale, currentScale)

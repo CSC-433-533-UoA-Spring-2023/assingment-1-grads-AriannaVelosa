@@ -14,6 +14,7 @@ Included files:
 * MathUtilities.js		-- some math functions that are used to do the matrix manipulations easily
 * bunny.ppm     -- a test image
 * pic1.ppm     -- a ppm image of a cup that I added
+* README     -- this file describing the assignment
 
 
 **PLEASE PROVIDE ANY ATTRIBUTION HERE**
