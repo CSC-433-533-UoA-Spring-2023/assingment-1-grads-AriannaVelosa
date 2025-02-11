@@ -6,6 +6,7 @@ Date: [February]. [10], 2025
 * To run this program, clone the repo and click on the html file to open it. It should pop up in your default browser. From there, click the button to select a ppm image on your computer. Then you just sit back and watch the transformations.
 * As far as I'm aware, I worked out all of the bugs and kinks so that everything behaves as it should. The images rotate and shrinks somewhat seamlesslessly.
 * I used homogeneous matrices in this assignment, so I would like that to be graded for extra credit.
+* The canvas shrinks and grows based on the size of the image, so if you select different images, the canvas will resize accordingly, and the photo will jump to where it fits in the center.
 
 
 Included files:
